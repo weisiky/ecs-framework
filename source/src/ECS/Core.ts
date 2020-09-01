@@ -152,23 +152,23 @@ module es {
             Core.emitter.emit(CoreEvents.OrientationChanged);
         }
 
-        public async draw() {
-            if (this._sceneTransition) {
+        public draw() {
+            if (this._sceneTransition)
                 this._sceneTransition.preRender();
 
-                // 如果我们有场景转换的特殊处理。我们要么渲染场景过渡，要么渲染场景
-                if (this._scene && !this._sceneTransition.hasPreviousSceneRender) {
+            // 如果我们有场景转换的特殊处理。我们要么渲染场景过渡，要么渲染场景
+            if (this._sceneTransition){
+                if (this._scene && this._sceneTransition.wantsPreviousSceneRender &&
+                    !this._sceneTransition.hasPreviousSceneRender) {
                     this._scene.render();
                     this._scene.postRender();
-                    await this._sceneTransition.onBeginTransition();
-                } else if (this._sceneTransition) {
-                    if (this._scene && this._sceneTransition.isNewSceneLoaded) {
-                        this._scene.render();
-                        this._scene.postRender();
-                    }
-
-                    this._sceneTransition.render();
+                    Core.startCoroutine(this._sceneTransition.onBeginTransition());
+                } else if (this._scene && this._sceneTransition.isNewSceneLoaded) {
+                    this._scene.render();
+                    this._scene.postRender();
                 }
+
+                this._sceneTransition.render();
             } else if (this._scene) {
                 this._scene.render();
 
@@ -224,7 +224,8 @@ module es {
                 // -除非是不改变场景的场景转换(没有理由不更新)
                 // -或者它是一个已经切换到新场景的场景转换(新场景需要做它自己的事情)
                 if (!this._sceneTransition ||
-                    (this._sceneTransition && (!this._sceneTransition.loadsNewScene || this._sceneTransition.isNewSceneLoaded))) {
+                    (this._sceneTransition &&
+                        (!this._sceneTransition.loadsNewScene || this._sceneTransition.isNewSceneLoaded))) {
                     this._scene.update();
                 }
 
@@ -236,14 +237,14 @@ module es {
                     this._nextScene = null;
                     this.onSceneChanged();
 
-                    await this._scene.begin();
+                    this._scene.begin();
                     this.addChild(this._scene);
                 }
             }
 
             this.endDebugUpdate();
 
-            await this.draw();
+            this.draw();
         }
 
         private onAddToStage() {

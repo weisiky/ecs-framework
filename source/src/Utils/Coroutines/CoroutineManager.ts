@@ -8,12 +8,11 @@ module es {
          * 每当产生延迟时，它就被添加到跟踪延迟的waitTimer中
          */
         public waitTimer: number;
-        public isDone: boolean;
         public waitForCoroutine: CoroutineImpl;
         public useUnscaledDeltaTime: boolean = false;
 
         public stop(){
-            this.isDone = true;
+            this.enumerator.throw();
         }
 
         public setUseUnscaledDeltaTime(useUnscaledDeltaTime): es.ICoroutine {
@@ -22,11 +21,10 @@ module es {
         }
 
         public prepareForuse(){
-            this.isDone = false;
+
         }
 
         public reset() {
-            this.isDone = true;
             this.waitTimer = 0;
             this.waitForCoroutine = null;
             this.enumerator = null;
@@ -81,14 +79,14 @@ module es {
                 let coroutine = this._unblockedCoroutines[i];
 
                 // 检查已停止的协程
-                if (coroutine.isDone){
+                if (coroutine.enumerator.next().done){
                     Pool.free<CoroutineImpl>(coroutine);
                     continue;
                 }
 
                 // 我们是否在等待其他协程完成
                 if (coroutine.waitForCoroutine != null){
-                    if (coroutine.waitForCoroutine.isDone){
+                    if (coroutine.waitForCoroutine.enumerator.next().done){
                         coroutine.waitForCoroutine = null;
                     }else{
                         this._shouldRunNextFrame.push(coroutine);
@@ -122,14 +120,13 @@ module es {
         public tickCoroutine(coroutine: CoroutineImpl){
             let current = coroutine.enumerator.next();
             // 这个协同程序已经完成了
-            if (!current.value || current.done){
+            if (!current || (current && current.done)){
                 Pool.free<CoroutineImpl>(coroutine);
                 return false;
             }
 
-            if (!current.value){
+            if (!current.value)
                 return true;
-            }
 
             if (current.value instanceof WaitForSeconds){
                 coroutine.waitTimer = (current.value as WaitForSeconds).waitTime;

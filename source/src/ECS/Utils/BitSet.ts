@@ -14,6 +14,7 @@ module es {
                 length++;
 
             this._bits = new Array(length);
+            this._bits.fill(0);
         }
 
         public and(bs: BitSet) {

@@ -67,7 +67,7 @@ module es {
         public setVertPositions(positions: Vector2[]){
             if (this._verts == undefined || this._verts.length != positions.length){
                 this._verts = new Array(positions.length);
-                this._verts.fill(new VertexPositionColorTexture(), 0, positions.length);
+                this._verts.fill(new VertexPositionColorTexture());
             }
 
             for (let i = 0; i < this._verts.length; i ++){

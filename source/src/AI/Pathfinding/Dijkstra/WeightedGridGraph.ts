@@ -36,6 +36,7 @@ module es {
             this._width = width;
             this._height = height;
             this._dirs = allowDiagonalSearch ? WeightedGridGraph.COMPASS_DIRS : WeightedGridGraph.CARDINAL_DIRS;
+            this._neighbors.fill(Vector2.zero);
         }
 
         public isNodeInBounds(node: Vector2) {

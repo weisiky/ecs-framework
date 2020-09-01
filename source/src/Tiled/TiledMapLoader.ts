@@ -152,7 +152,7 @@ module es {
             let xData = xLayer["data"];
             let encoding = xData["encoding"] != undefined ? xData["encoding"] : "csv";
 
-            layer.tiles = new Array<TmxLayerTile>(width * height);
+            layer.tiles = [];
             if (encoding == "base64") {
                 let br = TmxUtils.decode(xData.toString(), encoding, xData["compression"]);
                 let index = 0;
@@ -349,7 +349,7 @@ module es {
 
             let strTerrain = xTile["terrain"];
             if (strTerrain){
-                tile.terrainEdges = new Array(4);
+                tile.terrainEdges = [];
                 let index = 0;
                 for (let v of strTerrain){
                     let edge: TmxTerrain = terrains[v];

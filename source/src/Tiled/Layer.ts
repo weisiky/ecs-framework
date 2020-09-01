@@ -47,7 +47,7 @@ module es {
          * 返回平铺空间中的矩形列表，其中任何非空平铺组合为边界区域
          */
         public getCollisionRectangles(): Rectangle[] {
-            let checkedIndexes: boolean[] = new Array(this.tiles.length);
+            let checkedIndexes: boolean[] = [];
             let rectangles = [];
             let startCol = -1;
             let index = -1;

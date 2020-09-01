@@ -77,7 +77,7 @@ module es {
             // 对于box 我们只需要两条边，因为另外两条边是平行的
             let totalEdges = this.isBox ? 2 : this.points.length;
             if (this._edgeNormals == undefined || this._edgeNormals.length != totalEdges)
-                this._edgeNormals = new Array(totalEdges);
+                this._edgeNormals = [];
 
             let p2: Vector2;
             for (let i = 0; i < totalEdges; i++) {
@@ -99,7 +99,7 @@ module es {
          * @param radius
          */
         public static buildSymmetricalPolygon(vertCount: number, radius: number) {
-            let verts = new Array(vertCount);
+            let verts = [];
 
             for (let i = 0; i < vertCount; i++) {
                 let a = 2 * Math.PI * (i / vertCount);

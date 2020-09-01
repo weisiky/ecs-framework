@@ -1,7 +1,7 @@
 module es {
     export class WindTransition extends SceneTransition {
         public duration = 1;
-        public easeType = egret.Ease.quadOut;
+        public easeType: EaseType = EaseType.quartOut;
         private _mask: egret.Shape;
         private _windEffect: egret.CustomFilter;
 
@@ -59,9 +59,9 @@ module es {
             this._windEffect.uniforms._size = value;
         }
 
-        public async onBeginTransition() {
-            this.loadNextScene();
-            await this.tickEffectProgressProperty(this._windEffect, this.duration, this.easeType);
+        public* onBeginTransition() {
+            yield Core.startCoroutine(this.loadNextScene());
+            yield Core.startCoroutine(this.tickEffectProgressProperty(this._windEffect, this.duration, this.easeType));
             this.transitionComplete();
         }
 

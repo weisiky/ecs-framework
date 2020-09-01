@@ -25,7 +25,7 @@ module es {
         public allowDragging: boolean = true;
 
         public _composites: Composite[] = [];
-        public static _colliders: Collider[] = new Array(4);
+        public static _colliders: Collider[] = [];
         public _tempCircle: Circle = new Circle(1);
 
         public _leftOverTime: number = 0;

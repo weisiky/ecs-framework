@@ -8,8 +8,8 @@ module es {
          */
         public triangleIndices: number[] = [];
 
-        private _triPrev: number[] = new Array<number>(12);
-        private _triNext: number[] = new Array<number>(12);
+        private _triPrev: number[] = [];
+        private _triNext: number[] = [];
 
         public static testPointTriangle(point: Vector2, a: Vector2, b: Vector2, c: Vector2): boolean {
             if (Vector2Ext.cross(Vector2.subtract(point, a), Vector2.subtract(b, a)) < 0)
@@ -94,11 +94,13 @@ module es {
 
             if (this._triNext.length < count) {
                 this._triNext.reverse();
-                this._triNext = new Array<number>(Math.max(this._triNext.length * 2, count));
+                this._triNext = new Array(Math.max(this._triNext.length * 2, count));
+                this._triNext.fill(0);
             }
             if (this._triPrev.length < count) {
                 this._triPrev.reverse();
-                this._triPrev = new Array<number>(Math.max(this._triPrev.length * 2, count));
+                this._triPrev = new Array(Math.max(this._triPrev.length * 2, count));
+                this._triPrev.fill(0);
             }
 
             for (let i = 0; i < count; i++) {

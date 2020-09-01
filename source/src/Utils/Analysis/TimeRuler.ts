@@ -17,7 +17,7 @@ module es {
         public static readonly logSnapDuration = 120;
         public static readonly barPadding = 2;
         public static readonly autoAdjustDelay = 30;
-        private static _instance;
+        private static _instance: TimeRuler;
         /** 获取/设置目标样本帧。 */
         public targetSampleFrames: number;
         /** 获取/设置计时器标尺宽度。 */
@@ -26,7 +26,7 @@ module es {
         /** 获取/设置日志显示或否 */
         public showLog = false;
         /** 每帧的日志 */
-        private _logs: FrameLog[];
+        private _logs: FrameLog[] = [];
         /** 当前显示帧计数 */
         private sampleFrames: number;
         /** TimerRuler画的位置。 */
@@ -36,7 +36,7 @@ module es {
         /** 当前帧日志 */
         private _curLog: FrameLog;
         /** 当前帧数量 */
-        private frameCount: number;
+        private frameCount: number = 0;
         /**  */
         private markers: MarkerInfo[] = [];
         /** 秒表用来测量时间。 */
@@ -61,9 +61,8 @@ module es {
         private _rectShape6: egret.Shape = new egret.Shape();
 
         constructor() {
-            this._logs = new Array<FrameLog>(2);
-            for (let i = 0; i < this._logs.length; ++i)
-                this._logs[i] = new FrameLog();
+            this._logs = new Array(2);
+            this._logs.fill(new FrameLog());
 
             this.sampleFrames = this.targetSampleFrames = 1;
             this.width = Math.floor(Core.graphicsDevice.viewport.width * 0.8);
@@ -73,8 +72,7 @@ module es {
         }
 
         public static get Instance(): TimeRuler {
-            if (!this._instance)
-                this._instance = new TimeRuler();
+            if (!this._instance) this._instance = new TimeRuler();
             return this._instance;
         }
 
@@ -344,8 +342,8 @@ module es {
         public bars: MarkerCollection[];
 
         constructor() {
-            this.bars = new Array<MarkerCollection>(TimeRuler.maxBars);
-            this.bars.fill(new MarkerCollection(), 0, TimeRuler.maxBars);
+            this.bars = new Array(TimeRuler.maxBars);
+            this.bars.fill(new MarkerCollection());
         }
     }
 
@@ -353,14 +351,16 @@ module es {
      * 标记的集合
      */
     export class MarkerCollection {
-        public markers: Marker[] = new Array<Marker>(TimeRuler.maxSamples);
+        public markers: Marker[] = [];
         public markCount: number = 0;
-        public markerNests: number[] = new Array<number>(TimeRuler.maxNestCall);
+        public markerNests: number[] = [];
         public nestCount: number = 0;
 
         constructor() {
-            this.markers.fill(new Marker(), 0, TimeRuler.maxSamples);
-            this.markerNests.fill(0, 0, TimeRuler.maxNestCall);
+            this.markers = new Array(TimeRuler.maxSamples);
+            this.markerNests = new Array(TimeRuler.maxNestCall);
+            this.markers.fill(new Marker());
+            this.markerNests.fill(0);
         }
     }
 
@@ -373,11 +373,12 @@ module es {
 
     export class MarkerInfo {
         public name: string;
-        public logs: MarkerLog[] = new Array<MarkerLog>(TimeRuler.maxBars);
+        public logs: MarkerLog[] = [];
 
         constructor(name) {
             this.name = name;
-            this.logs.fill(new MarkerLog(), 0, TimeRuler.maxBars);
+            this.logs = new Array(TimeRuler.maxBars);
+            this.logs.fill(new MarkerLog());
         }
     }
 

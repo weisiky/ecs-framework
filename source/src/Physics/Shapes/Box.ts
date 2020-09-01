@@ -22,7 +22,7 @@ module es {
             // 我们在(0,0)的中心周围创建点
             let halfWidth = width / 2;
             let halfHeight = height / 2;
-            let verts = new Array(4);
+            let verts = [];
             verts[0] = new Vector2(-halfWidth, -halfHeight);
             verts[1] = new Vector2(halfWidth, -halfHeight);
             verts[2] = new Vector2(halfWidth, halfHeight);

@@ -23,6 +23,7 @@ module es {
         constructor(width: number, height: number) {
             this._width = width;
             this._height = height;
+            this._neighbors.fill(Vector2.zero);
         }
 
         /**
