@@ -211,7 +211,7 @@ declare module es {
         static startCoroutine(enumerator: Iterator<any>): CoroutineImpl;
         static schedule(timeInSeconds: number, repeats: boolean, context: any, onTime: (timer: ITimer) => void): Timer;
         onOrientationChanged(): void;
-        draw(): Promise<void>;
+        draw(): void;
         startDebugUpdate(): void;
         endDebugUpdate(): void;
         onSceneChanged(): void;
@@ -1145,6 +1145,11 @@ declare class TimeUtils {
     static timeToMillisecond(time: string, partition?: string): string;
 }
 declare module es {
+    class Graphics {
+        static createSingleColorTexture(width: number, height: number, color: Color): egret.Texture;
+    }
+}
+declare module es {
     class GraphicsCapabilities extends egret.Capabilities {
         initialize(device: GraphicsDevice): void;
         private platformInitialize;
@@ -1264,32 +1269,41 @@ declare module es {
 }
 declare module es {
     abstract class SceneTransition {
+        previousSceneRender: egret.RenderTexture;
+        previousSceneRenderBitmap: egret.Bitmap;
+        wantsPreviousSceneRender: boolean;
         loadsNewScene: boolean;
         isNewSceneLoaded: boolean;
         onScreenObscured: Function;
         onTransitionCompleted: Function;
+        loadSceneOnBackgroundThread: boolean;
         protected sceneLoadAction: Function;
-        constructor(sceneLoadAction: Function);
+        protected constructor(sceneLoadAction: Function, wantsPreviousSceneRender?: boolean);
         private _hasPreviousSceneRender;
         readonly hasPreviousSceneRender: boolean;
         preRender(): void;
         render(): void;
-        onBeginTransition(): Promise<void>;
-        tickEffectProgressProperty(filter: egret.CustomFilter, duration: number, easeType: Function, reverseDirection?: boolean): Promise<boolean>;
+        onBeginTransition(): any;
+        tickEffectProgressProperty(filter: egret.CustomFilter, duration: number, easeType?: EaseType, reverseDirection?: boolean): IterableIterator<any>;
         protected transitionComplete(): void;
-        protected loadNextScene(): Promise<void>;
+        protected loadNextScene(): IterableIterator<any>;
     }
 }
 declare module es {
     class FadeTransition extends SceneTransition {
-        fadeToColor: number;
+        fadeToColor: Color;
         fadeOutDuration: number;
-        fadeEaseType: Function;
+        fadeEaseType: EaseType;
         delayBeforeFadeInDuration: number;
-        private _mask;
-        private _alpha;
+        fadeInDuration: number;
+        _color: Color;
+        _fromColor: Color;
+        _toColor: Color;
+        _overlayTexture: egret.Texture;
+        _overlayBitmap: egret.Bitmap;
+        _destinationRect: Rectangle;
         constructor(sceneLoadAction: Function);
-        onBeginTransition(): Promise<void>;
+        onBeginTransition(): any;
         protected transitionComplete(): void;
         render(): void;
     }
@@ -1297,13 +1311,13 @@ declare module es {
 declare module es {
     class WindTransition extends SceneTransition {
         duration: number;
-        easeType: (t: number) => number;
+        easeType: EaseType;
         private _mask;
         private _windEffect;
         constructor(sceneLoadAction: Function);
         windSegments: number;
         size: number;
-        onBeginTransition(): Promise<void>;
+        onBeginTransition(): IterableIterator<CoroutineImpl>;
         protected transitionComplete(): void;
     }
 }
@@ -2375,7 +2389,6 @@ declare module es {
     class CoroutineImpl implements ICoroutine, IPoolable {
         enumerator: Iterator<any>;
         waitTimer: number;
-        isDone: boolean;
         waitForCoroutine: CoroutineImpl;
         useUnscaledDeltaTime: boolean;
         stop(): void;
@@ -2748,5 +2761,42 @@ declare module es {
         _timers: Timer[];
         update(): void;
         schedule(timeInSeconds: number, repeats: boolean, context: any, onTime: (timer: ITimer) => void): Timer;
+    }
+}
+declare module es {
+    enum EaseType {
+        quartIn = 0,
+        quartOut = 1,
+        expoIn = 2,
+        expoOut = 3
+    }
+    class EaseHelper {
+        static oppositeEaseType(easeType: EaseType): EaseType;
+        static ease(easeType: EaseType, t: number, duration: number): number;
+    }
+}
+declare module es {
+    class Easing {
+    }
+    class Linear {
+        static easeNone(t: number, d: number): number;
+    }
+    class Quartic {
+        static easeIn(t: number, d: number): number;
+        static easeOut(t: number, d: number): number;
+        static easeInOut(t: number, d: number): number;
+    }
+    class Exponential {
+        static easeIn(t: number, d: number): number;
+        static easeOut(t: number, d: number): number;
+        static easeInOut(t: number, d: number): number;
+    }
+}
+declare module es {
+    class Lerps {
+        static easeNumber(easeType: EaseType, from: number, to: number, t: number, duration: number): number;
+        static easeColor(easeType: EaseType, from: Color, to: Color, t: number, duration: number): Color;
+        static lerpColor(from: Color, to: Color, t: number): Color;
+        static lerpNumber(from: number, to: number, t: number): number;
     }
 }

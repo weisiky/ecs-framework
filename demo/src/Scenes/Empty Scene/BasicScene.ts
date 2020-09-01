@@ -11,7 +11,6 @@ module samples {
 
                 this.camera.entity.addComponent(new es.FollowCamera(moonEntity));
             });
-
         }
     }
 }

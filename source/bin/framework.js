@@ -389,7 +389,7 @@ var es;
             this.weightedNodes = [];
             this.defaultWeight = 1;
             this.weightedNodeWeight = 5;
-            this._neighbors = new Array(4);
+            this._neighbors = [];
             this._width = width;
             this._height = height;
         }
@@ -427,7 +427,7 @@ var es;
     var PriorityQueue = (function () {
         function PriorityQueue(maxNodes) {
             this._numNodes = 0;
-            this._nodes = new Array(maxNodes + 1);
+            this._nodes = [];
             this._numNodesEverEnqueued = 0;
         }
         Object.defineProperty(PriorityQueue.prototype, "count", {
@@ -777,7 +777,7 @@ var es;
         function UnweightedGridGraph(width, height, allowDiagonalSearch) {
             if (allowDiagonalSearch === void 0) { allowDiagonalSearch = false; }
             this.walls = [];
-            this._neighbors = new Array(4);
+            this._neighbors = [];
             this._width = width;
             this._hegiht = height;
             this._dirs = allowDiagonalSearch ? UnweightedGridGraph.COMPASS_DIRS : UnweightedGridGraph.CARDINAL_DIRS;
@@ -830,7 +830,7 @@ var es;
             this.weightedNodes = [];
             this.defaultWeight = 1;
             this.weightedNodeWeight = 5;
-            this._neighbors = new Array(4);
+            this._neighbors = [];
             this._width = width;
             this._height = height;
             this._dirs = allowDiagonalSearch ? WeightedGridGraph.COMPASS_DIRS : WeightedGridGraph.CARDINAL_DIRS;
@@ -1042,40 +1042,26 @@ var es;
             Core.emitter.emit(es.CoreEvents.OrientationChanged);
         };
         Core.prototype.draw = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            if (!this._sceneTransition) return [3, 4];
-                            this._sceneTransition.preRender();
-                            if (!(this._scene && !this._sceneTransition.hasPreviousSceneRender)) return [3, 2];
-                            this._scene.render();
-                            this._scene.postRender();
-                            return [4, this._sceneTransition.onBeginTransition()];
-                        case 1:
-                            _a.sent();
-                            return [3, 3];
-                        case 2:
-                            if (this._sceneTransition) {
-                                if (this._scene && this._sceneTransition.isNewSceneLoaded) {
-                                    this._scene.render();
-                                    this._scene.postRender();
-                                }
-                                this._sceneTransition.render();
-                            }
-                            _a.label = 3;
-                        case 3: return [3, 5];
-                        case 4:
-                            if (this._scene) {
-                                this._scene.render();
-                                es.Debug.render();
-                                this._scene.postRender();
-                            }
-                            _a.label = 5;
-                        case 5: return [2];
-                    }
-                });
-            });
+            if (this._sceneTransition)
+                this._sceneTransition.preRender();
+            if (this._sceneTransition) {
+                if (this._scene && this._sceneTransition.wantsPreviousSceneRender &&
+                    !this._sceneTransition.hasPreviousSceneRender) {
+                    this._scene.render();
+                    this._scene.postRender();
+                    Core.startCoroutine(this._sceneTransition.onBeginTransition());
+                }
+                else if (this._scene && this._sceneTransition.isNewSceneLoaded) {
+                    this._scene.render();
+                    this._scene.postRender();
+                }
+                this._sceneTransition.render();
+            }
+            else if (this._scene) {
+                this._scene.render();
+                es.Debug.render();
+                this._scene.postRender();
+            }
         };
         Core.prototype.startDebugUpdate = function () {
             es.TimeRuler.Instance.startFrame();
@@ -1097,39 +1083,33 @@ var es;
             return __awaiter(this, void 0, void 0, function () {
                 var i;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            this.startDebugUpdate();
-                            es.Time.update(egret.getTimer());
-                            es.Input.update();
-                            if (!this._scene) return [3, 2];
-                            for (i = this._globalManagers.length - 1; i >= 0; i--) {
-                                if (this._globalManagers[i].enabled)
-                                    this._globalManagers[i].update();
-                            }
-                            if (!this._sceneTransition ||
-                                (this._sceneTransition && (!this._sceneTransition.loadsNewScene || this._sceneTransition.isNewSceneLoaded))) {
-                                this._scene.update();
-                            }
-                            if (!this._nextScene) return [3, 2];
+                    this.startDebugUpdate();
+                    es.Time.update(egret.getTimer());
+                    es.Input.update();
+                    if (this._scene) {
+                        for (i = this._globalManagers.length - 1; i >= 0; i--) {
+                            if (this._globalManagers[i].enabled)
+                                this._globalManagers[i].update();
+                        }
+                        if (!this._sceneTransition ||
+                            (this._sceneTransition &&
+                                (!this._sceneTransition.loadsNewScene || this._sceneTransition.isNewSceneLoaded))) {
+                            this._scene.update();
+                        }
+                        if (this._nextScene) {
                             if (this._scene.parent)
                                 this._scene.parent.removeChild(this._scene);
                             this._scene.end();
                             this._scene = this._nextScene;
                             this._nextScene = null;
                             this.onSceneChanged();
-                            return [4, this._scene.begin()];
-                        case 1:
-                            _a.sent();
+                            this._scene.begin();
                             this.addChild(this._scene);
-                            _a.label = 2;
-                        case 2:
-                            this.endDebugUpdate();
-                            return [4, this.draw()];
-                        case 3:
-                            _a.sent();
-                            return [2];
+                        }
                     }
+                    this.endDebugUpdate();
+                    this.draw();
+                    return [2];
                 });
             });
         };
@@ -3525,7 +3505,7 @@ var es;
         Mesh.prototype.setVertPositions = function (positions) {
             if (this._verts == undefined || this._verts.length != positions.length) {
                 this._verts = new Array(positions.length);
-                this._verts.fill(new VertexPositionColorTexture(), 0, positions.length);
+                this._verts.fill(new VertexPositionColorTexture());
             }
             for (var i = 0; i < this._verts.length; i++) {
                 this._verts[i].position = positions[i];
@@ -4246,6 +4226,7 @@ var es;
             if ((nbits & BitSet.LONG_MASK) != 0)
                 length++;
             this._bits = new Array(length);
+            this._bits.fill(0);
         }
         BitSet.prototype.and = function (bs) {
             var max = Math.min(this._bits.length, bs._bits.length);
@@ -5507,6 +5488,26 @@ var TimeUtils = (function () {
 }());
 var es;
 (function (es) {
+    var BitmapData = egret.BitmapData;
+    var Graphics = (function () {
+        function Graphics() {
+        }
+        Graphics.createSingleColorTexture = function (width, height, color) {
+            var texture = new egret.Texture();
+            var data = new ArrayBuffer(width * height);
+            for (var i = 0; i < data.byteLength; i++) {
+                data[i] = color;
+            }
+            var bitmapData = BitmapData.create("arraybuffer", data);
+            texture._setBitmapData(bitmapData);
+            return texture;
+        };
+        return Graphics;
+    }());
+    es.Graphics = Graphics;
+})(es || (es = {}));
+var es;
+(function (es) {
     var GraphicsCapabilities = (function (_super) {
         __extends(GraphicsCapabilities, _super);
         function GraphicsCapabilities() {
@@ -5957,9 +5958,13 @@ var es;
 var es;
 (function (es) {
     var SceneTransition = (function () {
-        function SceneTransition(sceneLoadAction) {
+        function SceneTransition(sceneLoadAction, wantsPreviousSceneRender) {
+            if (wantsPreviousSceneRender === void 0) { wantsPreviousSceneRender = true; }
             this.sceneLoadAction = sceneLoadAction;
+            this.wantsPreviousSceneRender = wantsPreviousSceneRender;
             this.loadsNewScene = sceneLoadAction != null;
+            if (wantsPreviousSceneRender)
+                this.previousSceneRender = new egret.RenderTexture();
         }
         Object.defineProperty(SceneTransition.prototype, "hasPreviousSceneRender", {
             get: function () {
@@ -5977,53 +5982,88 @@ var es;
         SceneTransition.prototype.render = function () {
         };
         SceneTransition.prototype.onBeginTransition = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4, this.loadNextScene()];
-                        case 1:
-                            _a.sent();
-                            this.transitionComplete();
-                            return [2];
-                    }
-                });
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, null];
+                    case 1:
+                        _a.sent();
+                        return [4, es.Core.startCoroutine(this.loadNextScene())];
+                    case 2:
+                        _a.sent();
+                        this.transitionComplete();
+                        return [2];
+                }
             });
         };
         SceneTransition.prototype.tickEffectProgressProperty = function (filter, duration, easeType, reverseDirection) {
+            var start, end, elapsed, step;
+            if (easeType === void 0) { easeType = es.EaseType.expoOut; }
             if (reverseDirection === void 0) { reverseDirection = false; }
-            return new Promise(function (resolve) {
-                var start = reverseDirection ? 1 : 0;
-                var end = reverseDirection ? 0 : 1;
-                egret.Tween.get(filter.uniforms).set({ _progress: start }).to({ _progress: end }, duration * 1000, easeType).call(function () {
-                    resolve();
-                });
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        start = reverseDirection ? 1 : 0;
+                        end = reverseDirection ? 0 : 1;
+                        elapsed = 0;
+                        _a.label = 1;
+                    case 1:
+                        if (!(elapsed < duration)) return [3, 3];
+                        elapsed += es.Time.deltaTime;
+                        step = es.Lerps.easeNumber(easeType, start, end, elapsed, duration);
+                        filter.uniforms._progress = step;
+                        return [4, null];
+                    case 2:
+                        _a.sent();
+                        return [3, 1];
+                    case 3: return [2];
+                }
             });
         };
         SceneTransition.prototype.transitionComplete = function () {
             es.Core._instance._sceneTransition = null;
+            if (this.previousSceneRender) {
+                this.previousSceneRender.dispose();
+                this.previousSceneRender = null;
+            }
             if (this.onTransitionCompleted) {
                 this.onTransitionCompleted();
             }
         };
         SceneTransition.prototype.loadNextScene = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var _a;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0:
-                            if (this.onScreenObscured)
-                                this.onScreenObscured();
-                            if (!this.loadsNewScene) {
-                                this.isNewSceneLoaded = true;
-                            }
-                            _a = es.Core;
-                            return [4, this.sceneLoadAction()];
-                        case 1:
-                            _a.scene = _b.sent();
+            var scene_1;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (this.onScreenObscured)
+                            this.onScreenObscured();
+                        if (!!this.loadsNewScene) return [3, 2];
+                        this.isNewSceneLoaded = true;
+                        return [4];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2:
+                        if (this.loadSceneOnBackgroundThread) {
+                            scene_1 = this.sceneLoadAction();
+                            es.Core.schedule(0, false, this, function (timer) {
+                                es.Core.scene = scene_1;
+                                _this.isNewSceneLoaded = true;
+                            });
+                        }
+                        else {
+                            es.Core.scene = this.sceneLoadAction();
                             this.isNewSceneLoaded = true;
-                            return [2];
-                    }
-                });
+                        }
+                        _a.label = 3;
+                    case 3:
+                        if (!!this.isNewSceneLoaded) return [3, 5];
+                        return [4, null];
+                    case 4:
+                        _a.sent();
+                        return [3, 3];
+                    case 5: return [2];
+                }
             });
         };
         return SceneTransition;
@@ -6036,52 +6076,75 @@ var es;
         __extends(FadeTransition, _super);
         function FadeTransition(sceneLoadAction) {
             var _this = _super.call(this, sceneLoadAction) || this;
-            _this.fadeToColor = 0x000000;
+            _this.fadeToColor = new es.Color(0, 0, 0, 255);
             _this.fadeOutDuration = 0.4;
-            _this.fadeEaseType = egret.Ease.quadInOut;
+            _this.fadeEaseType = es.EaseType.quartOut;
             _this.delayBeforeFadeInDuration = 0.1;
-            _this._alpha = 0;
-            _this._mask = new egret.Shape();
+            _this.fadeInDuration = 0.6;
+            _this._color = new es.Color(255, 255, 255, 255);
+            _this._fromColor = new es.Color(255, 255, 255, 255);
+            _this._toColor = new es.Color(0, 0, 0, 0);
             return _this;
         }
         FadeTransition.prototype.onBeginTransition = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var _this = this;
-                return __generator(this, function (_a) {
-                    if (!this._mask.parent)
-                        es.Core.scene.stage.addChild(this._mask);
-                    this._mask.graphics.beginFill(this.fadeToColor, 1);
-                    this._mask.graphics.drawRect(0, 0, es.Core.graphicsDevice.viewport.width, es.Core.graphicsDevice.viewport.height);
-                    this._mask.graphics.endFill();
-                    egret.Tween.get(this).to({ _alpha: 1 }, this.fadeOutDuration * 1000, this.fadeEaseType)
-                        .call(function () { return __awaiter(_this, void 0, void 0, function () {
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0: return [4, this.loadNextScene()];
-                                case 1:
-                                    _a.sent();
-                                    return [2];
-                            }
-                        });
-                    }); }).wait(this.delayBeforeFadeInDuration).call(function () {
-                        egret.Tween.get(_this).to({ _alpha: 0 }, _this.fadeOutDuration * 1000, _this.fadeEaseType).call(function () {
-                            _this.transitionComplete();
-                        });
-                    });
-                    return [2];
-                });
+            var elapsed;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        this._overlayTexture = es.Graphics.createSingleColorTexture(es.Core.scene.width, es.Core.scene.height, this.fadeToColor);
+                        this._overlayBitmap = new egret.Bitmap(this._overlayTexture);
+                        elapsed = 0;
+                        _a.label = 1;
+                    case 1:
+                        if (!(elapsed < this.fadeOutDuration)) return [3, 3];
+                        elapsed += es.Time.deltaTime;
+                        this._color = es.Lerps.easeColor(this.fadeEaseType, this._toColor, this._fromColor, elapsed, this.fadeOutDuration);
+                        return [4, null];
+                    case 2:
+                        _a.sent();
+                        return [3, 1];
+                    case 3: return [4, es.Core.startCoroutine(this.loadNextScene())];
+                    case 4:
+                        _a.sent();
+                        this.previousSceneRender.dispose();
+                        this.previousSceneRender = null;
+                        return [4, es.Coroutine.waitForSeconds(this.delayBeforeFadeInDuration)];
+                    case 5:
+                        _a.sent();
+                        elapsed = 0;
+                        _a.label = 6;
+                    case 6:
+                        if (!(elapsed < this.fadeInDuration)) return [3, 8];
+                        elapsed += es.Time.deltaTime;
+                        this._color = es.Lerps.easeColor(es.EaseHelper.oppositeEaseType(this.fadeEaseType), this._fromColor, this._toColor, elapsed, this.fadeInDuration);
+                        return [4, null];
+                    case 7:
+                        _a.sent();
+                        return [3, 6];
+                    case 8:
+                        this.transitionComplete();
+                        this._overlayTexture.dispose();
+                        return [2];
+                }
             });
         };
         FadeTransition.prototype.transitionComplete = function () {
             _super.prototype.transitionComplete.call(this);
-            if (this._mask.parent)
-                this._mask.parent.removeChild(this._mask);
+            if (this._overlayBitmap.parent)
+                this._overlayBitmap.parent.removeChild(this._overlayBitmap);
+            if (this.previousSceneRenderBitmap.parent)
+                this._overlayBitmap.parent.removeChild(this.previousSceneRenderBitmap);
         };
         FadeTransition.prototype.render = function () {
-            this._mask.graphics.clear();
-            this._mask.graphics.beginFill(this.fadeToColor, this._alpha);
-            this._mask.graphics.drawRect(0, 0, es.Core.graphicsDevice.viewport.width, es.Core.graphicsDevice.viewport.height);
-            this._mask.graphics.endFill();
+            if (!this.isNewSceneLoaded) {
+                this.previousSceneRender.drawToTexture(es.Core.scene, this._destinationRect);
+                this.previousSceneRenderBitmap = new egret.Bitmap(this.previousSceneRender);
+                if (!this.previousSceneRenderBitmap.parent)
+                    es.Core.scene.stage.addChild(this.previousSceneRenderBitmap);
+            }
+            if (!this._overlayBitmap.parent)
+                es.Core.scene.stage.addChild(this._overlayBitmap);
+            this._overlayBitmap.filters = [es.DrawUtils.getColorMatrix(this._color.packedValue)];
         };
         return FadeTransition;
     }(es.SceneTransition));
@@ -6094,7 +6157,7 @@ var es;
         function WindTransition(sceneLoadAction) {
             var _this = _super.call(this, sceneLoadAction) || this;
             _this.duration = 1;
-            _this.easeType = egret.Ease.quadOut;
+            _this.easeType = es.EaseType.quartOut;
             var vertexSrc = "attribute vec2 aVertexPosition;\n" +
                 "attribute vec2 aTextureCoord;\n" +
                 "uniform vec2 projectionVector;\n" +
@@ -6146,18 +6209,17 @@ var es;
             configurable: true
         });
         WindTransition.prototype.onBeginTransition = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            this.loadNextScene();
-                            return [4, this.tickEffectProgressProperty(this._windEffect, this.duration, this.easeType)];
-                        case 1:
-                            _a.sent();
-                            this.transitionComplete();
-                            return [2];
-                    }
-                });
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, es.Core.startCoroutine(this.loadNextScene())];
+                    case 1:
+                        _a.sent();
+                        return [4, es.Core.startCoroutine(this.tickEffectProgressProperty(this._windEffect, this.duration, this.easeType))];
+                    case 2:
+                        _a.sent();
+                        this.transitionComplete();
+                        return [2];
+                }
             });
         };
         WindTransition.prototype.transitionComplete = function () {
@@ -7424,7 +7486,7 @@ var es;
         Polygon.prototype.buildEdgeNormals = function () {
             var totalEdges = this.isBox ? 2 : this.points.length;
             if (this._edgeNormals == undefined || this._edgeNormals.length != totalEdges)
-                this._edgeNormals = new Array(totalEdges);
+                this._edgeNormals = [];
             var p2;
             for (var i = 0; i < totalEdges; i++) {
                 var p1 = this.points[i];
@@ -7438,7 +7500,7 @@ var es;
             }
         };
         Polygon.buildSymmetricalPolygon = function (vertCount, radius) {
-            var verts = new Array(vertCount);
+            var verts = [];
             for (var i = 0; i < vertCount; i++) {
                 var a = 2 * Math.PI * (i / vertCount);
                 verts[i] = new es.Vector2(Math.cos(a) * radius, Math.sin(a) * radius);
@@ -7593,7 +7655,7 @@ var es;
         Box.buildBox = function (width, height) {
             var halfWidth = width / 2;
             var halfHeight = height / 2;
-            var verts = new Array(4);
+            var verts = [];
             verts[0] = new es.Vector2(-halfWidth, -halfHeight);
             verts[1] = new es.Vector2(halfWidth, -halfHeight);
             verts[2] = new es.Vector2(halfWidth, halfHeight);
@@ -8166,7 +8228,7 @@ var es;
             for (var i = 0; i < this._composites.length; i++)
                 this._composites[i].debugRender(camera);
         };
-        VerletWorld._colliders = new Array(4);
+        VerletWorld._colliders = [];
         return VerletWorld;
     }());
     es.VerletWorld = VerletWorld;
@@ -8264,7 +8326,7 @@ var es;
             return this.tiles[x + y * this.width];
         };
         TmxLayer.prototype.getCollisionRectangles = function () {
-            var checkedIndexes = new Array(this.tiles.length);
+            var checkedIndexes = [];
             var rectangles = [];
             var startCol = -1;
             var index = -1;
@@ -8719,7 +8781,7 @@ var es;
             layer.height = xLayer["height"];
             var xData = xLayer["data"];
             var encoding = xData["encoding"] != undefined ? xData["encoding"] : "csv";
-            layer.tiles = new Array(width * height);
+            layer.tiles = [];
             if (encoding == "base64") {
                 var br = es.TmxUtils.decode(xData.toString(), encoding, xData["compression"]);
                 var index = 0;
@@ -8929,7 +8991,7 @@ var es;
                             tile.id = xTile["id"];
                             strTerrain = xTile["terrain"];
                             if (strTerrain) {
-                                tile.terrainEdges = new Array(4);
+                                tile.terrainEdges = [];
                                 index = 0;
                                 for (_i = 0, strTerrain_1 = strTerrain; _i < strTerrain_1.length; _i++) {
                                     v = strTerrain_1[_i];
@@ -10245,7 +10307,7 @@ var es;
                 obj["reset"]();
             }
         };
-        Pool._objectQueue = new Array(10);
+        Pool._objectQueue = [];
         return Pool;
     }());
     es.Pool = Pool;
@@ -10430,8 +10492,8 @@ var es;
     var Triangulator = (function () {
         function Triangulator() {
             this.triangleIndices = [];
-            this._triPrev = new Array(12);
-            this._triNext = new Array(12);
+            this._triPrev = [];
+            this._triNext = [];
         }
         Triangulator.testPointTriangle = function (point, a, b, c) {
             if (es.Vector2Ext.cross(es.Vector2.subtract(point, a), es.Vector2.subtract(b, a)) < 0)
@@ -10491,10 +10553,12 @@ var es;
             if (this._triNext.length < count) {
                 this._triNext.reverse();
                 this._triNext = new Array(Math.max(this._triNext.length * 2, count));
+                this._triNext.fill(0);
             }
             if (this._triPrev.length < count) {
                 this._triPrev.reverse();
                 this._triPrev = new Array(Math.max(this._triPrev.length * 2, count));
+                this._triPrev.fill(0);
             }
             for (var i = 0; i < count; i++) {
                 this._triPrev[i] = i - 1;
@@ -10764,6 +10828,8 @@ var es;
     var TimeRuler = (function () {
         function TimeRuler() {
             this.showLog = false;
+            this._logs = [];
+            this.frameCount = 0;
             this.markers = [];
             this.stopwacth = new stopwatch.Stopwatch();
             this._markerNameToIdMap = new Map();
@@ -10774,8 +10840,7 @@ var es;
             this._rectShape5 = new egret.Shape();
             this._rectShape6 = new egret.Shape();
             this._logs = new Array(2);
-            for (var i = 0; i < this._logs.length; ++i)
-                this._logs[i] = new FrameLog();
+            this._logs.fill(new FrameLog());
             this.sampleFrames = this.targetSampleFrames = 1;
             this.width = Math.floor(es.Core.graphicsDevice.viewport.width * 0.8);
             es.Core.emitter.addObserver(es.CoreEvents.GraphicsDeviceReset, this.onGraphicsDeviceReset, this);
@@ -10995,19 +11060,21 @@ var es;
     var FrameLog = (function () {
         function FrameLog() {
             this.bars = new Array(TimeRuler.maxBars);
-            this.bars.fill(new MarkerCollection(), 0, TimeRuler.maxBars);
+            this.bars.fill(new MarkerCollection());
         }
         return FrameLog;
     }());
     es.FrameLog = FrameLog;
     var MarkerCollection = (function () {
         function MarkerCollection() {
-            this.markers = new Array(TimeRuler.maxSamples);
+            this.markers = [];
             this.markCount = 0;
-            this.markerNests = new Array(TimeRuler.maxNestCall);
+            this.markerNests = [];
             this.nestCount = 0;
-            this.markers.fill(new Marker(), 0, TimeRuler.maxSamples);
-            this.markerNests.fill(0, 0, TimeRuler.maxNestCall);
+            this.markers = new Array(TimeRuler.maxSamples);
+            this.markerNests = new Array(TimeRuler.maxNestCall);
+            this.markers.fill(new Marker());
+            this.markerNests.fill(0);
         }
         return MarkerCollection;
     }());
@@ -11024,9 +11091,10 @@ var es;
     es.Marker = Marker;
     var MarkerInfo = (function () {
         function MarkerInfo(name) {
-            this.logs = new Array(TimeRuler.maxBars);
+            this.logs = [];
             this.name = name;
-            this.logs.fill(new MarkerLog(), 0, TimeRuler.maxBars);
+            this.logs = new Array(TimeRuler.maxBars);
+            this.logs.fill(new MarkerLog());
         }
         return MarkerInfo;
     }());
@@ -11077,17 +11145,15 @@ var es;
             this.useUnscaledDeltaTime = false;
         }
         CoroutineImpl.prototype.stop = function () {
-            this.isDone = true;
+            this.enumerator.throw();
         };
         CoroutineImpl.prototype.setUseUnscaledDeltaTime = function (useUnscaledDeltaTime) {
             this.useUnscaledDeltaTime = useUnscaledDeltaTime;
             return this;
         };
         CoroutineImpl.prototype.prepareForuse = function () {
-            this.isDone = false;
         };
         CoroutineImpl.prototype.reset = function () {
-            this.isDone = true;
             this.waitTimer = 0;
             this.waitForCoroutine = null;
             this.enumerator = null;
@@ -11121,12 +11187,12 @@ var es;
             this._isInUpdate = true;
             for (var i = 0; i < this._unblockedCoroutines.length; i++) {
                 var coroutine = this._unblockedCoroutines[i];
-                if (coroutine.isDone) {
+                if (coroutine.enumerator.next().done) {
                     es.Pool.free(coroutine);
                     continue;
                 }
                 if (coroutine.waitForCoroutine != null) {
-                    if (coroutine.waitForCoroutine.isDone) {
+                    if (coroutine.waitForCoroutine.enumerator.next().done) {
                         coroutine.waitForCoroutine = null;
                     }
                     else {
@@ -11149,13 +11215,12 @@ var es;
         };
         CoroutineManager.prototype.tickCoroutine = function (coroutine) {
             var current = coroutine.enumerator.next();
-            if (!current.value || current.done) {
+            if (!current || (current && current.done)) {
                 es.Pool.free(coroutine);
                 return false;
             }
-            if (!current.value) {
+            if (!current.value)
                 return true;
-            }
             if (current.value instanceof es.WaitForSeconds) {
                 coroutine.waitTimer = current.value.waitTime;
                 return true;
@@ -12328,4 +12393,129 @@ var es;
         return TimerManager;
     }(es.GlobalManager));
     es.TimerManager = TimerManager;
+})(es || (es = {}));
+var es;
+(function (es) {
+    var EaseType;
+    (function (EaseType) {
+        EaseType[EaseType["quartIn"] = 0] = "quartIn";
+        EaseType[EaseType["quartOut"] = 1] = "quartOut";
+        EaseType[EaseType["expoIn"] = 2] = "expoIn";
+        EaseType[EaseType["expoOut"] = 3] = "expoOut";
+    })(EaseType = es.EaseType || (es.EaseType = {}));
+    var EaseHelper = (function () {
+        function EaseHelper() {
+        }
+        EaseHelper.oppositeEaseType = function (easeType) {
+            switch (easeType) {
+                case EaseType.quartIn:
+                    return EaseType.quartOut;
+                case EaseType.quartOut:
+                    return EaseType.quartIn;
+                case EaseType.expoIn:
+                    return EaseType.expoOut;
+                case EaseType.expoOut:
+                    return EaseType.expoIn;
+                default:
+                    return easeType;
+            }
+        };
+        EaseHelper.ease = function (easeType, t, duration) {
+            switch (easeType) {
+                case EaseType.expoIn:
+                    return es.Exponential.easeIn(t, duration);
+                case EaseType.expoOut:
+                    return es.Exponential.easeInOut(t, duration);
+                case EaseType.quartIn:
+                    return es.Quartic.easeIn(t, duration);
+                case EaseType.quartOut:
+                    return es.Quartic.easeOut(t, duration);
+                default:
+                    return es.Linear.easeNone(t, duration);
+            }
+        };
+        return EaseHelper;
+    }());
+    es.EaseHelper = EaseHelper;
+})(es || (es = {}));
+var es;
+(function (es) {
+    var Easing = (function () {
+        function Easing() {
+        }
+        return Easing;
+    }());
+    es.Easing = Easing;
+    var Linear = (function () {
+        function Linear() {
+        }
+        Linear.easeNone = function (t, d) {
+            return t / d;
+        };
+        return Linear;
+    }());
+    es.Linear = Linear;
+    var Quartic = (function () {
+        function Quartic() {
+        }
+        Quartic.easeIn = function (t, d) {
+            return (t /= d) * t * t * t;
+        };
+        Quartic.easeOut = function (t, d) {
+            return -1 * ((t = t / d - 1) * t * t * t - 1);
+        };
+        Quartic.easeInOut = function (t, d) {
+            t /= d / 2;
+            if (t < 1)
+                return 0.5 * t * t * t * t;
+            t -= 2;
+            return -0.5 * (t * t * t * t - 2);
+        };
+        return Quartic;
+    }());
+    es.Quartic = Quartic;
+    var Exponential = (function () {
+        function Exponential() {
+        }
+        Exponential.easeIn = function (t, d) {
+            return (t == 0) ? 0 : Math.pow(2, 10 * (t / d - 1));
+        };
+        Exponential.easeOut = function (t, d) {
+            return t == d ? 1 : (-Math.pow(2, -10 * t / d) + 1);
+        };
+        Exponential.easeInOut = function (t, d) {
+            if (t == 0)
+                return 0;
+            if (t == d)
+                return 1;
+            if ((t /= d / 2) < 1) {
+                return 0.5 * Math.pow(2, 10 * (t - 1));
+            }
+            return 0.5 * (-Math.pow(2, -10 * --t) + 2);
+        };
+        return Exponential;
+    }());
+    es.Exponential = Exponential;
+})(es || (es = {}));
+var es;
+(function (es) {
+    var Lerps = (function () {
+        function Lerps() {
+        }
+        Lerps.easeNumber = function (easeType, from, to, t, duration) {
+            return Lerps.lerpNumber(from, to, es.EaseHelper.ease(easeType, t, duration));
+        };
+        Lerps.easeColor = function (easeType, from, to, t, duration) {
+            return Lerps.lerpColor(from, to, es.EaseHelper.ease(easeType, t, duration));
+        };
+        Lerps.lerpColor = function (from, to, t) {
+            var t255 = Math.floor(t * 255);
+            return new es.Color(from.r + (to.r - from.r) * t255 / 255, from.g + (to.g - from.g) * t255 / 255, from.b + (to.b - from.b) * t255 / 255, from.a + (to.a - from.a) * t255 / 255);
+        };
+        Lerps.lerpNumber = function (from, to, t) {
+            return (from + (to - from) * t);
+        };
+        return Lerps;
+    }());
+    es.Lerps = Lerps;
 })(es || (es = {}));
